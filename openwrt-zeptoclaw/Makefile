@@ -28,6 +28,10 @@ CARGO_PKG_VARS+= \
 # Keep OpenWrt default crt behavior for compatibility, but statically link libgcc.
 CARGO_RUSTFLAGS+=-Clink-arg=-static-libgcc
 
+# psm's MIPS asm does not support being built with mips16 flags.
+TARGET_CFLAGS:=$(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS))
+TARGET_CXXFLAGS:=$(filter-out -mips16 -minterlink-mips16,$(TARGET_CXXFLAGS))
+
 define Package/openwrt-zeptoclaw
   SECTION:=utils
   CATEGORY:=Utilities
