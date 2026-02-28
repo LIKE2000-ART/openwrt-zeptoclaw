@@ -81,8 +81,9 @@ build_openwrt_source_hash() {
 	tar_git="$tmpdir/${pkg_name}.tar.git"
 	tar_zst="$tmpdir/${pkg_name}.tar.zst"
 
-	git clone --depth 1 --branch "$tag" "https://github.com/$OWNER/$REPO.git" "$repo_dir" >/dev/null 2>&1
-	tar_timestamp="$(git -C "$repo_dir" log -1 --format='@%ct')"
+	git clone "https://github.com/$OWNER/$REPO.git" "$repo_dir" >/dev/null 2>&1
+	git -C "$repo_dir" checkout "$tag" >/dev/null 2>&1
+	tar_timestamp="$(git -C "$repo_dir" log -1 --no-show-signature --format='@%ct')"
 
 	git -C "$repo_dir" config core.abbrev 8
 	git -C "$repo_dir" archive --format=tar HEAD --output="$tar_git"
@@ -92,7 +93,7 @@ build_openwrt_source_hash() {
 	tar -C "$work_dir/$pkg_name" -xf "$tar_git"
 	(
 		cd "$work_dir/$pkg_name" || exit 1
-		git submodule update --init --recursive -- >/dev/null 2>&1 || true
+		git submodule update --init --recursive -- >/dev/null 2>&1
 		rm -rf .git .gitmodules
 	)
 
