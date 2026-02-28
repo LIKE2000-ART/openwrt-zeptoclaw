@@ -47,37 +47,8 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "new_ver=$new_ver" >> "$GITHUB_OUTPUT"
 
-      - name: Check if direct push is safe
-        id: scope
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          set -eu
-
-          direct_push=false
-          changed_files="$(git diff --cached --name-only)"
-          if [ "$changed_files" = "openwrt-zeptoclaw/Makefile" ]; then
-            # Only allow direct push when changed lines are PKG_VERSION/PKG_MIRROR_HASH in Makefile.
-            if git diff --cached --unified=0 -- openwrt-zeptoclaw/Makefile \
-              | grep -E '^[+-](PKG_VERSION:=|PKG_MIRROR_HASH:=)' \
-              | grep -q . \
-              && ! git diff --cached --unified=0 -- openwrt-zeptoclaw/Makefile \
-              | grep -E '^[+-]' \
-              | grep -Ev '^[+-](PKG_VERSION:=|PKG_MIRROR_HASH:=)' \
-              | grep -q .; then
-              direct_push=true
-            fi
-          fi
-
-          echo "direct_push=$direct_push" >> "$GITHUB_OUTPUT"
-
-      - name: Direct push version/hash update
-        if: steps.changes.outputs.changed == 'true' && steps.scope.outputs.direct_push == 'true' && secrets.REPO_PUSH_TOKEN != ''
-        run: |
-          git commit -m "chore: bump zeptoclaw to v${{ steps.changes.outputs.new_ver }}"
-          git push "https://x-access-token:${{ secrets.REPO_PUSH_TOKEN }}@github.com/${{ github.repository }}.git" "HEAD:${{ github.ref_name }}"
-
       - name: Create pull request
-        if: steps.changes.outputs.changed == 'true' && !(steps.scope.outputs.direct_push == 'true' && secrets.REPO_PUSH_TOKEN != '')
+        if: steps.changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
