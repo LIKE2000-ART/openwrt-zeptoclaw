@@ -1,0 +1,45 @@
+name: Version check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 5'
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Sync upstream version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set git identity
+        run: |
+          git config --local user.name "GitHub Action"
+          git config --local user.email "actions-user@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install curl jq
+
+      - name: Sync package version
+        run: |
+          cd openwrt-zeptoclaw
+          chmod +x ./sync-zeptoclaw-version.sh
+          ./sync-zeptoclaw-version.sh
+
+      - name: Commit and push if changed
+        run: |
+          git add openwrt-zeptoclaw/Makefile
+          if git diff-index --cached --quiet HEAD --; then
+            echo "No changes"
+            exit 0
+          fi
+
+          new_ver="$(sed -n 's|^PKG_VERSION:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
+          git commit -m "chore: bump zeptoclaw to v${new_ver}"
+          git push
