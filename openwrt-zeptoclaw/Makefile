@@ -13,6 +13,7 @@ PKG_MAINTAINER:=yalike
 PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=rust/host
+PKG_USE_MIPS16:=0
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/rust/rust-package.mk
@@ -44,7 +45,7 @@ CARGO_BUILD_BINARIES:=zeptoclaw
 
 define Package/openwrt-zeptoclaw/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/zeptoclaw $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/zeptoclaw $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/zeptoclaw.init $(1)/etc/init.d/zeptoclaw
