@@ -17,10 +17,14 @@ PKG_BUILD_DEPENDS:=rust/host
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/rust/rust-package.mk
 
-# OpenWrt Rust toolchain defaults to dynamic linking (-crt-static).
-# Force static CRT for a standalone zeptoclaw binary.
-CARGO_RUSTFLAGS+=-Ctarget-feature=+crt-static
-# Ensure libgcc is linked statically as well.
+# Speed up CI compile time for large Rust dependency graph.
+# Tradeoff: slightly larger binary compared to OpenWrt's default rust profile.
+CARGO_PKG_VARS+= \
+	CARGO_PROFILE_RELEASE_LTO=false \
+	CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16 \
+	CARGO_PROFILE_RELEASE_OPT_LEVEL=2
+
+# Keep OpenWrt default crt behavior for compatibility, but statically link libgcc.
 CARGO_RUSTFLAGS+=-Clink-arg=-static-libgcc
 
 define Package/openwrt-zeptoclaw
