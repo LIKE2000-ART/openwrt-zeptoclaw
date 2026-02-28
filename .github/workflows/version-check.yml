@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   check:
@@ -32,14 +33,31 @@ jobs:
           chmod +x ./sync-zeptoclaw-version.sh
           ./sync-zeptoclaw-version.sh
 
-      - name: Commit and push if changed
+      - name: Check changes
+        id: changes
         run: |
           git add openwrt-zeptoclaw/Makefile
           if git diff-index --cached --quiet HEAD --; then
             echo "No changes"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           new_ver="$(sed -n 's|^PKG_VERSION:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
-          git commit -m "chore: bump zeptoclaw to v${new_ver}"
-          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "new_ver=$new_ver" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump zeptoclaw to v${{ steps.changes.outputs.new_ver }}"
+          branch: "bot/version-bump-${{ steps.changes.outputs.new_ver }}"
+          delete-branch: true
+          title: "chore: bump zeptoclaw to v${{ steps.changes.outputs.new_ver }}"
+          body: |
+            Automated version sync from upstream release.
+
+            - Updated `PKG_VERSION`
+            - Updated `PKG_MIRROR_HASH`
