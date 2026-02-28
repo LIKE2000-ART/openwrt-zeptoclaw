@@ -284,6 +284,8 @@ apk add --allow-untrusted --force-overwrite openwrt-zeptoclaw*.apk
 
 - [ZeptoClaw](https://github.com/qhkm/zeptoclaw) — 上游项目
 - [openwrt-bandix](https://github.com/timsaya/openwrt-bandix) — OpenWrt 打包与 CI 参考
+- [sbwml](https://github.com/sbwml) — openwrt-gh-action-sdk 及工具链维护
+- [sirpdboy](https://github.com/sirpdboy) — OpenWrt 插件开发与维护
 - [OpenWrt](https://openwrt.org) — 自由的嵌入式 Linux 操作系统
 
 ---

@@ -1,6 +1,7 @@
 name: Build Packages
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "*"
@@ -63,7 +64,9 @@ jobs:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
           PACKAGES: openwrt-zeptoclaw
+          V: s
           NO_REFRESH_CHECK: true
+          NO_SHFMT_CHECK: true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

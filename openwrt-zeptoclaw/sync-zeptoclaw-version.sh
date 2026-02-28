@@ -27,19 +27,19 @@ github_get_latest_release() {
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
-		--dry-run)
-			DRY_RUN=1
-			shift
-			;;
-		-h|--help)
-			usage
-			exit 0
-			;;
-		*)
-			echo "Unknown argument: $1" >&2
-			usage
-			exit 2
-			;;
+	--dry-run)
+		DRY_RUN=1
+		shift
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown argument: $1" >&2
+		usage
+		exit 2
+		;;
 	esac
 done
 
