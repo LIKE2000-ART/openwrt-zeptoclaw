@@ -1,0 +1,114 @@
+name: Dependency Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 6"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit ${{ matrix.arch }}-${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - aarch64_cortex-a53
+          - aarch64_generic
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - mips_24kc
+          - mipsel_24kc
+          - riscv64_riscv64
+        sdk:
+          - openwrt-24.10
+          - SNAPSHOT
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build package for audit
+        uses: sbwml/openwrt-gh-action-sdk@main
+        env:
+          ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
+          FEEDNAME: packages_ci
+          PACKAGES: openwrt-zeptoclaw
+          V: s
+          NO_REFRESH_CHECK: true
+          NO_SHFMT_CHECK: true
+
+      - name: Audit binary runtime deps
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ matrix.arch }}" = "riscv64_riscv64" ]; then
+            pkg_dir="bin/packages/riscv64_generic/packages_ci"
+          else
+            pkg_dir="bin/packages/${{ matrix.arch }}/packages_ci"
+          fi
+
+          mkdir -p audit
+          report="audit/${{ matrix.sdk }}-${{ matrix.arch }}-runtime-audit.txt"
+          {
+            echo "Runtime audit for ${{ matrix.arch }} / ${{ matrix.sdk }}"
+            echo "Package dir: ${pkg_dir}"
+            echo
+          } > "$report"
+
+          mapfile -t pkgs < <(find "$pkg_dir" -maxdepth 1 -type f \( -name "openwrt-zeptoclaw*.ipk" -o -name "openwrt-zeptoclaw*.apk" \) | sort)
+          if [ "${#pkgs[@]}" -eq 0 ]; then
+            echo "No package found for audit." | tee -a "$report"
+            exit 0
+          fi
+
+          for pkg in "${pkgs[@]}"; do
+            work="$(mktemp -d)"
+            rootfs="$work/rootfs"
+            mkdir -p "$rootfs"
+
+            echo "=== $(basename "$pkg") ===" | tee -a "$report"
+            if [[ "$pkg" == *.ipk ]]; then
+              data_member="$(ar t "$pkg" | grep '^data.tar' | head -n1 || true)"
+              if [ -z "$data_member" ]; then
+                echo "No data.tar* member found in ipk" | tee -a "$report"
+                rm -rf "$work"
+                continue
+              fi
+              ar p "$pkg" "$data_member" > "$work/$data_member"
+              tar -xf "$work/$data_member" -C "$rootfs"
+            else
+              tar -xf "$pkg" -C "$rootfs" || true
+            fi
+
+            bin="$rootfs/usr/bin/zeptoclaw"
+            if [ ! -f "$bin" ]; then
+              echo "Binary not found at /usr/bin/zeptoclaw" | tee -a "$report"
+              rm -rf "$work"
+              continue
+            fi
+
+            echo "[file]" | tee -a "$report"
+            file "$bin" | tee -a "$report"
+            echo "[readelf NEEDED]" | tee -a "$report"
+            readelf -d "$bin" | grep "NEEDED" | tee -a "$report" || echo "(none)" | tee -a "$report"
+            echo "[cert path strings]" | tee -a "$report"
+            strings "$bin" | grep -E "/etc/ssl|ca-certificates|/etc/openssl" | head -n 20 | tee -a "$report" || echo "(none)" | tee -a "$report"
+            echo | tee -a "$report"
+
+            rm -rf "$work"
+          done
+
+          cat "$report"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v7
+        with:
+          name: audit-${{ matrix.arch }}-${{ matrix.sdk }}
+          path: audit/*.txt
