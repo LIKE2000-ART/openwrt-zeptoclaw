@@ -6,6 +6,9 @@ on:
     tags:
       - "*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build ${{ matrix.arch }}-${{ matrix.sdk }}
@@ -87,6 +90,7 @@ jobs:
           fi
 
       - name: Upload packages
+        if: startsWith(github.ref, 'refs/tags/')
         uses: ncipollo/release-action@v1
         with:
           name: ${{ github.ref_name }}
