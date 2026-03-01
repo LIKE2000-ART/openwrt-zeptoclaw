@@ -1,7 +1,7 @@
 # 🦐 超轻量级 AI 助手 · OpenWrt 打包工程
 
-[![ZeptoClaw](https://img.shields.io/badge/ZeptoClaw-v0.5.9-blue.svg?style=flat-square)](https://github.com/qhkm/zeptoclaw)
-[![openwrt-zeptoclaw](https://img.shields.io/badge/openwrt--zeptoclaw-v0.5.9--r1-green.svg?style=flat-square)](https://github.com/LIKE2000-ART/openwrt-zeptoclaw/releases)
+[![ZeptoClaw](https://img.shields.io/badge/ZeptoClaw-v0.6.1-blue.svg?style=flat-square)](https://github.com/qhkm/zeptoclaw)
+[![openwrt-zeptoclaw](https://img.shields.io/badge/openwrt--zeptoclaw-v0.6.1--r1-green.svg?style=flat-square)](https://github.com/LIKE2000-ART/openwrt-zeptoclaw/releases)
 [![License](https://img.shields.io/badge/License-Apache--2.0-orange.svg?style=flat-square)](openwrt-zeptoclaw/Makefile)
 [![Build](https://img.shields.io/github/actions/workflow/status/LIKE2000-ART/openwrt-zeptoclaw/auto-compile-openwrt-sdk.yml?style=flat-square&label=CI)](https://github.com/LIKE2000-ART/openwrt-zeptoclaw/actions)
 
@@ -61,7 +61,8 @@ ZeptoClaw 是一个超轻量级个人 AI 助手，面向资源受限设备和终
 | `openwrt-zeptoclaw/Makefile` | OpenWrt Rust 交叉编译配置，自动从 GitHub 拉取源码并编译 |
 | `openwrt-zeptoclaw/files/zeptoclaw.init` | procd init.d 启动脚本，支持 `zeptoclaw gateway` 守护进程模式 |
 | `openwrt-zeptoclaw/files/zeptoclaw.config` | UCI 默认配置（enabled/mode/workdir/args） |
-| `openwrt-zeptoclaw/sync-zeptoclaw-version.sh` | 自动检测上游 release 并更新 `PKG_VERSION` |
+| `openwrt-zeptoclaw/sync-zeptoclaw-version.sh` | 自动检测上游 release 并更新 `PKG_VERSION` + `PKG_MIRROR_HASH` |
+| `openwrt-zeptoclaw/patches/100-portable-atomic-u64-for-mips.patch` | MIPS 架构 `AtomicU64` 兼容补丁（portable-atomic） |
 
 ---
 
@@ -71,6 +72,7 @@ ZeptoClaw 是一个超轻量级个人 AI 助手，面向资源受限设备和终
 .
 ├── openwrt-zeptoclaw/                      # 核心二进制包
 │   ├── Makefile                            # OpenWrt Rust 交叉编译 Makefile
+│   ├── patches/                            # OpenWrt 源码补丁目录
 │   ├── sync-zeptoclaw-version.sh           # 上游版本同步脚本
 │   └── files/
 │       ├── zeptoclaw.config                # UCI 默认配置
@@ -80,7 +82,8 @@ ZeptoClaw 是一个超轻量级个人 AI 助手，面向资源受限设备和终
 │   ├── dependabot.yml                      # Dependabot 配置
 │   └── workflows/
 │       ├── auto-compile-openwrt-sdk.yml    # 多架构自动构建并发布
-│       └── version-check.yml               # 定时版本检查与自动提交
+│       ├── dependency-audit.yml            # 依赖审计（手动触发，可选上传产物）
+│       └── version-check.yml               # 定时版本检查与自动提 PR
 │
 └── README.md                               # 本说明文件
 ```
@@ -150,7 +153,7 @@ make package/custom_packages/openwrt-zeptoclaw/openwrt-zeptoclaw/compile V=s
 
 ### 方法三：下载预编译包安装
 
-前往 [Releases](https://github.com/yalike/openwrt-zeptoclaw/releases) 下载对应架构包，安装：
+前往 [Releases](https://github.com/LIKE2000-ART/openwrt-zeptoclaw/releases) 下载对应架构包，安装：
 
 ```bash
 # OpenWrt 24.10+（apk 格式）
@@ -244,9 +247,10 @@ zeptoclaw gateway
 ### 📝 其他注意事项
 
 1. **版本策略**：`PKG_VERSION` 由 `sync-zeptoclaw-version.sh` 跟随上游 release 更新。  
-2. **源码哈希**：当前 `PKG_MIRROR_HASH:=skip` 便于迭代，正式发布建议固定哈希。  
+2. **源码哈希**：`sync-zeptoclaw-version.sh` 会同步更新 `PKG_MIRROR_HASH`，用于 OpenWrt 下载校验。  
 3. **包格式差异**：不同 OpenWrt 分支可能输出 `ipk` 或 `apk`。  
 4. **编译依赖**：请确保 SDK 的 `lang/rust` 可用并与目标分支兼容。  
+5. **MIPS 兼容**：针对 `mips/mipsel` 架构，包构建阶段会应用 portable-atomic 补丁以解决 `AtomicU64` 不可用问题。  
 
 ---
 
@@ -269,6 +273,14 @@ apk add --allow-untrusted --force-overwrite openwrt-zeptoclaw*.apk
 ---
 
 ## 📋 版本记录
+
+### 2026.03.01 v0.6.1-r1
+
+- ⬆️ 升级 ZeptoClaw 到 `v0.6.1`
+- ✅ 版本同步脚本支持自动更新 `PKG_MIRROR_HASH`
+- ✅ 修复源码包 HASH 校验失败问题
+- ✅ 增加 MIPS `AtomicU64` portable-atomic 兼容补丁
+- ✅ 新增 `dependency-audit.yml`（手动触发依赖审计，可选上传产物）
 
 ### 2026.02.27 v0.5.9-r1
 
@@ -309,7 +321,7 @@ apk add --allow-untrusted --force-overwrite openwrt-zeptoclaw*.apk
 | 链接 | 说明 |
 | ------ | ------ |
 | [ZeptoClaw 官方仓库](https://github.com/qhkm/zeptoclaw) | ZeptoClaw 源码和文档 |
-| [本项目 Releases](https://github.com/yalike/openwrt-zeptoclaw/releases) | 预编译包下载 |
+| [本项目 Releases](https://github.com/LIKE2000-ART/openwrt-zeptoclaw/releases) | 预编译包下载 |
 | [OpenWrt 官网](https://openwrt.org) | OpenWrt 文档与固件 |
 
 ---
