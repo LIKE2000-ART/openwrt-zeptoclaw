@@ -177,7 +177,16 @@ config zeptoclaw 'main'
         option mode 'gateway'           # 启动模式（默认 gateway）
         option workdir '/root/.zeptoclaw'  # 工作目录
         option args ''                  # 额外命令参数
+        option rust_log 'info'          # RUST_LOG 日志级别
+        option env_file '/etc/zeptoclaw/env' # 环境变量文件
+        option respawn_sec '5'          # 崩溃后重启间隔（秒）
 ```
+
+### `/etc/zeptoclaw` 统一入口
+
+- `/etc/zeptoclaw/env`：可写入 `KEY=VALUE`，服务启动时自动加载（适合 LuCI 传参）。
+- `/etc/zeptoclaw/config.json`：由 init 维护为软链接，指向实际工作目录中的 `config.json`。
+- 当 `workdir` 设为非默认路径（如 `/opt/.zeptoclaw`）时，init 会自动维护 `/root/.zeptoclaw -> <workdir>`，保证服务与手动 CLI 路径一致。
 
 ### 服务管理
 
