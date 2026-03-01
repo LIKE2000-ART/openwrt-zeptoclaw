@@ -8,7 +8,7 @@ PROG=/usr/bin/zeptoclaw
 
 start_service() {
 	local enabled mode args workdir default_workdir rust_log env_file respawn_sec
-	local cfg_dir cfg_link cfg_target
+	local cfg_dir cfg_master cfg_workdir cfg_default
 
 	config_load zeptoclaw
 	config_get_bool enabled main enabled 0
@@ -37,8 +37,9 @@ start_service() {
 
 	mkdir -p "$workdir"
 	cfg_dir="/etc/zeptoclaw"
-	cfg_link="$cfg_dir/config.json"
-	cfg_target="$workdir/config.json"
+	cfg_master="$cfg_dir/config.json"
+	cfg_workdir="$workdir/config.json"
+	cfg_default="$default_workdir/config.json"
 	mkdir -p "$cfg_dir"
 
 	# Keep upstream's default HOME path stable while storing data elsewhere.
@@ -61,23 +62,41 @@ start_service() {
 		fi
 	fi
 
-	# Keep OpenWrt-facing config path stable: /etc/zeptoclaw/config.json -> $workdir/config.json
-	if [ -L "$cfg_link" ]; then
-		if [ "$(readlink "$cfg_link")" != "$cfg_target" ]; then
-			rm -f "$cfg_link"
-			ln -s "$cfg_target" "$cfg_link"
+	# Keep config master at /etc/zeptoclaw/config.json and point runtime path to it.
+	if [ -L "$cfg_workdir" ]; then
+		if [ "$(readlink "$cfg_workdir")" != "$cfg_master" ]; then
+			rm -f "$cfg_workdir"
+			ln -s "$cfg_master" "$cfg_workdir"
 		fi
-	elif [ -f "$cfg_link" ]; then
-		# Migrate existing plain config into workdir once, then replace with symlink.
-		if [ ! -e "$cfg_target" ]; then
-			mv "$cfg_link" "$cfg_target"
-			ln -s "$cfg_target" "$cfg_link"
+	elif [ -f "$cfg_workdir" ]; then
+		if [ ! -e "$cfg_master" ]; then
+			mv "$cfg_workdir" "$cfg_master"
+		else
+			rm -f "$cfg_workdir"
 		fi
-	elif [ -e "$cfg_link" ]; then
-		rm -f "$cfg_link"
-		ln -s "$cfg_target" "$cfg_link"
-	else
-		ln -s "$cfg_target" "$cfg_link"
+		ln -s "$cfg_master" "$cfg_workdir"
+	elif [ ! -e "$cfg_workdir" ] && [ -e "$cfg_master" ]; then
+		ln -s "$cfg_master" "$cfg_workdir"
+	fi
+
+	# Keep /root/.zeptoclaw/config.json available when default_workdir is a real dir.
+	# If default_workdir is already a symlink to workdir, this is covered by cfg_workdir.
+	if [ -d "$default_workdir" ] && [ ! -L "$default_workdir" ]; then
+		if [ -L "$cfg_default" ]; then
+			if [ "$(readlink "$cfg_default")" != "$cfg_master" ]; then
+				rm -f "$cfg_default"
+				ln -s "$cfg_master" "$cfg_default"
+			fi
+		elif [ -f "$cfg_default" ]; then
+			if [ ! -e "$cfg_master" ]; then
+				mv "$cfg_default" "$cfg_master"
+			else
+				rm -f "$cfg_default"
+			fi
+			ln -s "$cfg_master" "$cfg_default"
+		elif [ ! -e "$cfg_default" ] && [ -e "$cfg_master" ]; then
+			ln -s "$cfg_master" "$cfg_default"
+		fi
 	fi
 
 	procd_open_instance

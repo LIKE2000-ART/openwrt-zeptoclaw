@@ -68,10 +68,96 @@ define Package/openwrt-zeptoclaw/install
 
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/zeptoclaw.config $(1)/etc/config/zeptoclaw
+
+	$(INSTALL_DIR) $(1)/usr/share/zeptoclaw
+	$(INSTALL_DATA) ./files/zeptoclaw-config.json $(1)/usr/share/zeptoclaw/config.json
 endef
 
 define Package/openwrt-zeptoclaw/conffiles
 /etc/config/zeptoclaw
+endef
+
+define Package/openwrt-zeptoclaw/postinst
+#!/bin/sh
+[ -n "$$IPKG_INSTROOT" ] && exit 0
+
+default_workdir="/root/.zeptoclaw"
+workdir="$$(uci -q get zeptoclaw.main.workdir)"
+[ -n "$$workdir" ] || workdir="$$default_workdir"
+cfg_dir="/etc/zeptoclaw"
+cfg_master="$$cfg_dir/config.json"
+cfg_workdir="$$workdir/config.json"
+cfg_default="$$default_workdir/config.json"
+
+mkdir -p "$$cfg_dir" "$$workdir" "$$workdir/workspace" "$$workdir/sessions"
+
+# Keep upstream default path consistent at install time:
+# /root/.zeptoclaw -> $$workdir (when workdir is customized).
+if [ "$$workdir" != "$$default_workdir" ]; then
+	if [ -L "$$default_workdir" ]; then
+		if [ "$$(readlink "$$default_workdir")" != "$$workdir" ]; then
+			rm -f "$$default_workdir"
+			ln -s "$$workdir" "$$default_workdir"
+		fi
+	elif [ -d "$$default_workdir" ]; then
+		# One-time migration if old default dir already has data.
+		cp -a "$$default_workdir"/. "$$workdir"/ 2>/dev/null || true
+		rm -rf "$$default_workdir"
+		ln -s "$$workdir" "$$default_workdir"
+	elif [ -e "$$default_workdir" ]; then
+		rm -f "$$default_workdir"
+		ln -s "$$workdir" "$$default_workdir"
+	else
+		ln -s "$$workdir" "$$default_workdir"
+	fi
+fi
+
+# Initialize master config only once.
+if [ ! -f "$$cfg_master" ] && [ -f /usr/share/zeptoclaw/config.json ]; then
+	cp /usr/share/zeptoclaw/config.json "$$cfg_master"
+	chmod 600 "$$cfg_master"
+fi
+
+# Keep runtime config path as symlink to the master file.
+if [ -L "$$cfg_workdir" ]; then
+	if [ "$$(readlink "$$cfg_workdir")" != "$$cfg_master" ]; then
+		rm -f "$$cfg_workdir"
+		ln -s "$$cfg_master" "$$cfg_workdir"
+	fi
+elif [ -f "$$cfg_workdir" ]; then
+	if [ ! -e "$$cfg_master" ]; then
+		mv "$$cfg_workdir" "$$cfg_master"
+	else
+		rm -f "$$cfg_workdir"
+	fi
+	ln -s "$$cfg_master" "$$cfg_workdir"
+elif [ ! -e "$$cfg_workdir" ]; then
+	ln -s "$$cfg_master" "$$cfg_workdir"
+fi
+
+# Also keep default path config entry available:
+# /root/.zeptoclaw/config.json -> /etc/zeptoclaw/config.json
+# If /root/.zeptoclaw is already a symlink to workdir, this naturally resolves
+# through the same cfg_workdir link above.
+if [ -d "$$default_workdir" ] && [ ! -L "$$default_workdir" ]; then
+	if [ -L "$$cfg_default" ]; then
+		if [ "$$(readlink "$$cfg_default")" != "$$cfg_master" ]; then
+			rm -f "$$cfg_default"
+			ln -s "$$cfg_master" "$$cfg_default"
+		fi
+	elif [ -f "$$cfg_default" ]; then
+		if [ ! -e "$$cfg_master" ]; then
+			mv "$$cfg_default" "$$cfg_master"
+		else
+			rm -f "$$cfg_default"
+		fi
+		ln -s "$$cfg_master" "$$cfg_default"
+	elif [ ! -e "$$cfg_default" ]; then
+		ln -s "$$cfg_master" "$$cfg_default"
+	fi
+fi
+
+exit 0
 endef
 
 $(eval $(call BuildPackage,openwrt-zeptoclaw))
