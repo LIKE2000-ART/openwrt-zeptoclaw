@@ -102,7 +102,7 @@ start_service() {
 	procd_open_instance
 	procd_set_param env HOME=/root
 	procd_set_param env RUST_LOG="$rust_log"
-	procd_set_param command /bin/sh -c "[ -f '$env_file' ] && . '$env_file'; cd '$default_workdir' && exec '$PROG' '$mode' $args"
+	procd_set_param command /bin/sh -c "export HOME=/root; [ -f '$env_file' ] && . '$env_file'; export HOME=/root; cd '$default_workdir' && exec '$PROG' '$mode' $args"
 	procd_set_param respawn 3600 "$respawn_sec" 0
 	procd_set_param stdout 1
 	procd_set_param stderr 1

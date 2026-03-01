@@ -160,4 +160,17 @@ fi
 exit 0
 endef
 
+define Package/openwrt-zeptoclaw/prerm
+#!/bin/sh
+[ -n "$$IPKG_INSTROOT" ] && exit 0
+
+# Uninstall path: avoid noisy procd "service delete ... Not found" messages.
+if [ -x /etc/init.d/zeptoclaw ]; then
+	/etc/init.d/zeptoclaw stop >/dev/null 2>&1 || true
+	/etc/init.d/zeptoclaw disable >/dev/null 2>&1 || true
+fi
+
+exit 0
+endef
+
 $(eval $(call BuildPackage,openwrt-zeptoclaw))
