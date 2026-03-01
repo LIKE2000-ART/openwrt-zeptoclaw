@@ -14,7 +14,18 @@ PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=rust/host
 PKG_USE_MIPS16:=0
+
+# Only MIPS targets need the portable-atomic patch and unlocked Cargo resolution.
+ifneq ($(filter mips mipsel,$(ARCH)),)
 RUST_PKG_LOCKED:=0
+define Build/Patch
+	$(call Build/Patch/Default)
+endef
+else
+define Build/Patch
+	:
+endef
+endif
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/rust/rust-package.mk
