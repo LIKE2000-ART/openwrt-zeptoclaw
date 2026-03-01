@@ -1,0 +1,229 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index cd9e710..74b1eb5 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -103,6 +103,8 @@ futures = "0.3"
+ dotenvy = "0.15"
+ # Lazy static initialization for global config
+ once_cell = "1.19"
++# Portable Atomic for targets without std::sync::atomic::AtomicU64 (e.g. mips)
++portable-atomic = { version = "1", features = ["fallback"] }
+ # Platform-specific paths (~/.config/zeptoclaw)
+ dirs = "5.0"
+ 
+diff --git a/src/agent/budget.rs b/src/agent/budget.rs
+index cb56d80..80d2f55 100644
+--- a/src/agent/budget.rs
++++ b/src/agent/budget.rs
+@@ -22,7 +22,8 @@
+ //! ```
+ 
+ use std::fmt;
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ 
+ /// Per-session token budget tracker.
+ ///
+diff --git a/src/bin/benchmark.rs b/src/bin/benchmark.rs
+index 5cc6c3f..930d34b 100644
+--- a/src/bin/benchmark.rs
++++ b/src/bin/benchmark.rs
+@@ -9,7 +9,8 @@
+ //! Usage:
+ //!   cargo run --bin benchmark -- --users 100 --duration 30
+ 
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ use std::sync::Arc;
+ use std::time::{Duration, Instant};
+ 
+diff --git a/src/cache/response_cache.rs b/src/cache/response_cache.rs
+index 3025322..a1ffe7e 100644
+--- a/src/cache/response_cache.rs
++++ b/src/cache/response_cache.rs
+@@ -242,7 +242,8 @@ mod tests {
+ 
+     /// Create a test cache with a unique temp path so parallel tests don't collide.
+     fn test_cache() -> ResponseCache {
+-        use std::sync::atomic::{AtomicU64, Ordering};
++        use std::sync::atomic::Ordering;
++        use portable_atomic::AtomicU64;
+         static COUNTER: AtomicU64 = AtomicU64::new(0);
+         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+         let tid = std::thread::current().id();
+diff --git a/src/channels/discord.rs b/src/channels/discord.rs
+index 01dd96c..a7db53d 100644
+--- a/src/channels/discord.rs
++++ b/src/channels/discord.rs
+@@ -656,7 +656,7 @@ impl DiscordChannel {
+             }
+ 
+             // --- Spawn heartbeat task ---
+-            let sequence = Arc::new(std::sync::atomic::AtomicU64::new(0));
++            let sequence = Arc::new(portable_atomic::AtomicU64::new(0));
+             let sequence_valid = Arc::new(AtomicBool::new(false));
+             let heartbeat_shutdown = shutdown_rx.clone();
+ 
+diff --git a/src/channels/plugin.rs b/src/channels/plugin.rs
+index a361646..66fa54c 100644
+--- a/src/channels/plugin.rs
++++ b/src/channels/plugin.rs
+@@ -126,7 +126,7 @@ pub struct ChannelPluginAdapter {
+     /// Handle to the child process (for killing on stop).
+     child_handle: Arc<Mutex<Option<tokio::process::Child>>>,
+     /// Monotonically increasing JSON-RPC request ID.
+-    request_id: std::sync::atomic::AtomicU64,
++    request_id: portable_atomic::AtomicU64,
+ }
+ 
+ impl ChannelPluginAdapter {
+@@ -149,7 +149,7 @@ impl ChannelPluginAdapter {
+             running: Arc::new(AtomicBool::new(false)),
+             child_stdin: Arc::new(Mutex::new(None)),
+             child_handle: Arc::new(Mutex::new(None)),
+-            request_id: std::sync::atomic::AtomicU64::new(1),
++            request_id: portable_atomic::AtomicU64::new(1),
+         }
+     }
+ 
+diff --git a/src/cli/daemon.rs b/src/cli/daemon.rs
+index 244e130..d8c517f 100644
+--- a/src/cli/daemon.rs
++++ b/src/cli/daemon.rs
+@@ -1,7 +1,8 @@
+ //! Daemon — supervised long-running agent with auto-restart.
+ 
+ use std::path::PathBuf;
+-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
++use std::sync::atomic::{AtomicBool, Ordering};
++use portable_atomic::AtomicU64;
+ use std::sync::Arc;
+ use std::time::Duration;
+ 
+diff --git a/src/deps/manager.rs b/src/deps/manager.rs
+index 5b3a02b..5c24ea0 100644
+--- a/src/deps/manager.rs
++++ b/src/deps/manager.rs
+@@ -366,7 +366,8 @@ mod tests {
+     use super::*;
+     use std::fs;
+ 
+-    use std::sync::atomic::{AtomicU64, Ordering};
++    use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+     static TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
+ 
+     fn test_dir() -> PathBuf {
+diff --git a/src/health.rs b/src/health.rs
+index 53bb43c..520f50d 100644
+--- a/src/health.rs
++++ b/src/health.rs
+@@ -12,7 +12,8 @@
+ //! preserving the ultra-light binary footprint (4MB design goal).
+ 
+ use std::collections::HashMap;
+-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
++use std::sync::atomic::{AtomicBool, Ordering};
++use portable_atomic::AtomicU64;
+ use std::sync::{Arc, RwLock};
+ use std::time::{Duration, Instant};
+ 
+diff --git a/src/peripherals/serial.rs b/src/peripherals/serial.rs
+index 0019d94..c8e2340 100644
+--- a/src/peripherals/serial.rs
++++ b/src/peripherals/serial.rs
+@@ -11,7 +11,8 @@ use crate::error::{Result, ZeptoError};
+ use crate::tools::{Tool, ToolCategory, ToolContext, ToolOutput};
+ use async_trait::async_trait;
+ use serde_json::{json, Value};
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ use std::sync::Arc;
+ use tokio::io::{AsyncReadExt, AsyncWriteExt};
+ use tokio::sync::Mutex;
+diff --git a/src/providers/fallback.rs b/src/providers/fallback.rs
+index 8b2e2e9..d367767 100644
+--- a/src/providers/fallback.rs
++++ b/src/providers/fallback.rs
+@@ -19,7 +19,8 @@
+ //! ```
+ 
+ use std::fmt;
+-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
++use std::sync::atomic::{AtomicU32, Ordering};
++use portable_atomic::AtomicU64;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use async_trait::async_trait;
+diff --git a/src/providers/rotation.rs b/src/providers/rotation.rs
+index 8a04a77..a4fb487 100644
+--- a/src/providers/rotation.rs
++++ b/src/providers/rotation.rs
+@@ -22,7 +22,8 @@
+ //! ```
+ 
+ use std::fmt;
+-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
++use std::sync::atomic::{AtomicU32, Ordering};
++use portable_atomic::AtomicU64;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use async_trait::async_trait;
+diff --git a/src/routines/engine.rs b/src/routines/engine.rs
+index bd8238e..8c7777e 100644
+--- a/src/routines/engine.rs
++++ b/src/routines/engine.rs
+@@ -2,7 +2,8 @@
+ 
+ use regex::Regex;
+ use std::collections::HashMap;
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ 
+ use super::{Routine, RoutineStore, Trigger};
+ 
+diff --git a/src/security/pairing.rs b/src/security/pairing.rs
+index 150024f..30d50da 100644
+--- a/src/security/pairing.rs
++++ b/src/security/pairing.rs
+@@ -405,7 +405,8 @@ mod tests {
+ 
+     /// Create a test manager with a unique temp path so parallel tests don't collide.
+     fn test_manager() -> PairingManager {
+-        use std::sync::atomic::{AtomicU64, Ordering};
++        use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+         static COUNTER: AtomicU64 = AtomicU64::new(0);
+         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+         let tid = std::thread::current().id();
+diff --git a/src/tools/mcp/client.rs b/src/tools/mcp/client.rs
+index 6c5542a..e5f9870 100644
+--- a/src/tools/mcp/client.rs
++++ b/src/tools/mcp/client.rs
+@@ -1,6 +1,7 @@
+ //! MCP client with HTTP transport.
+ 
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ use std::sync::Arc;
+ use tokio::sync::RwLock;
+ 
+diff --git a/src/tools/stripe.rs b/src/tools/stripe.rs
+index da13d29..4b1f998 100644
+--- a/src/tools/stripe.rs
++++ b/src/tools/stripe.rs
+@@ -21,7 +21,8 @@
+ //! - `get_balance` — Retrieve current account balance
+ //! - `verify_webhook` — Verify a Stripe webhook signature (HMAC-SHA256 + timestamp)
+ 
+-use std::sync::atomic::{AtomicU64, Ordering};
++use std::sync::atomic::Ordering;
++use portable_atomic::AtomicU64;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ use async_trait::async_trait;
