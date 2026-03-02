@@ -1,5 +1,5 @@
 diff --git a/Cargo.toml b/Cargo.toml
-index cd9e710..74b1eb5 100644
+index 3d4a94b..b868ad4 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -103,6 +103,8 @@ futures = "0.3"
@@ -40,7 +40,7 @@ index 5cc6c3f..930d34b 100644
  use std::time::{Duration, Instant};
  
 diff --git a/src/cache/response_cache.rs b/src/cache/response_cache.rs
-index 3025322..a1ffe7e 100644
+index 3025322..6f84530 100644
 --- a/src/cache/response_cache.rs
 +++ b/src/cache/response_cache.rs
 @@ -242,7 +242,8 @@ mod tests {
@@ -54,10 +54,10 @@ index 3025322..a1ffe7e 100644
          let id = COUNTER.fetch_add(1, Ordering::Relaxed);
          let tid = std::thread::current().id();
 diff --git a/src/channels/discord.rs b/src/channels/discord.rs
-index 01dd96c..a7db53d 100644
+index d695da2..ccd13e2 100644
 --- a/src/channels/discord.rs
 +++ b/src/channels/discord.rs
-@@ -656,7 +656,7 @@ impl DiscordChannel {
+@@ -675,7 +675,7 @@ impl DiscordChannel {
              }
  
              // --- Spawn heartbeat task ---
@@ -145,7 +145,7 @@ index 0019d94..c8e2340 100644
  use tokio::io::{AsyncReadExt, AsyncWriteExt};
  use tokio::sync::Mutex;
 diff --git a/src/providers/fallback.rs b/src/providers/fallback.rs
-index 8b2e2e9..d367767 100644
+index b886b60..fd26c1c 100644
 --- a/src/providers/fallback.rs
 +++ b/src/providers/fallback.rs
 @@ -19,7 +19,8 @@
@@ -201,18 +201,19 @@ index 150024f..30d50da 100644
          let id = COUNTER.fetch_add(1, Ordering::Relaxed);
          let tid = std::thread::current().id();
 diff --git a/src/tools/mcp/client.rs b/src/tools/mcp/client.rs
-index 6c5542a..e5f9870 100644
+index 82acd31..7c3cdf0 100644
 --- a/src/tools/mcp/client.rs
 +++ b/src/tools/mcp/client.rs
-@@ -1,6 +1,7 @@
- //! MCP client with HTTP transport.
+@@ -1,7 +1,8 @@
+ //! MCP client — transport-agnostic JSON-RPC 2.0 client.
  
+ use std::collections::HashMap;
 -use std::sync::atomic::{AtomicU64, Ordering};
 +use std::sync::atomic::Ordering;
 +use portable_atomic::AtomicU64;
  use std::sync::Arc;
- use tokio::sync::RwLock;
  
+ use tokio::sync::RwLock;
 diff --git a/src/tools/stripe.rs b/src/tools/stripe.rs
 index da13d29..4b1f998 100644
 --- a/src/tools/stripe.rs
