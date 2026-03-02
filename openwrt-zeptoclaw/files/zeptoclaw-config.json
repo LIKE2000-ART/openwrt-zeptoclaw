@@ -1,84 +1,354 @@
 {
-  "providers": {
-    "default": "anthropic",
-    "anthropic": {
-      "api_key": "sk-ant-...",
-      "model": "claude-sonnet-4-5-20250929"
-    },
-    "openai": {
-      "api_key": "sk-...",
-      "model": "gpt-5.1"
-    },
-    "retry": {
-      "enabled": true,
-      "max_retries": 3,
-      "base_delay_ms": 1000,
-      "max_delay_ms": 30000
-    },
-    "fallback": {
-      "enabled": true,
-      "provider": "openai"
+  "agents": {
+    "defaults": {
+      "workspace": "~/.zeptoclaw/workspace",
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 8192,
+      "temperature": 0.7,
+      "max_tool_iterations": 20,
+      "agent_timeout_secs": 300,
+      "message_queue_mode": "collect",
+      "streaming": false,
+      "token_budget": 0,
+      "compact_tools": false,
+      "tool_profile": null,
+      "active_hand": null,
+      "timezone": "Etc/UTC",
+      "loop_guard_enabled": true,
+      "loop_guard_window": 10,
+      "loop_guard_repetition_threshold": 3,
+      "loop_guard_max_hits": 2,
+      "max_tool_result_bytes": 20480
     }
   },
   "channels": {
-    "telegram": {
+    "telegram": null,
+    "discord": null,
+    "slack": null,
+    "whatsapp": null,
+    "whatsapp_cloud": null,
+    "feishu": null,
+    "lark": null,
+    "maixcam": null,
+    "qq": null,
+    "dingtalk": null,
+    "webhook": null,
+    "email": null,
+    "serial": null,
+    "channel_plugins_dir": null
+  },
+  "providers": {
+    "anthropic": null,
+    "openai": null,
+    "openrouter": null,
+    "groq": null,
+    "zhipu": null,
+    "vllm": null,
+    "gemini": null,
+    "ollama": null,
+    "nvidia": null,
+    "retry": {
+      "enabled": false,
+      "max_retries": 3,
+      "base_delay_ms": 1000,
+      "max_delay_ms": 30000,
+      "retry_budget_ms": 45000
+    },
+    "fallback": {
+      "enabled": false,
+      "provider": null
+    },
+    "rotation": {
+      "enabled": false,
+      "order": [],
+      "strategy": "priority",
+      "failure_threshold": 3,
+      "cooldown_secs": 30
+    },
+    "plugins": []
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "rate_limit": {
+      "pair_per_min": 0,
+      "webhook_per_min": 0
+    },
+    "startup_guard": {
       "enabled": true,
-      "bot_token": "123456:ABC..."
-    },
-    "slack": {
-      "enabled": false,
-      "bot_token": "xoxb-..."
-    },
-    "discord": {
-      "enabled": false,
-      "bot_token": "MTIz...",
-      "guild_id": "123456789"
-    },
-    "webhook": {
-      "enabled": false,
-      "bind": "0.0.0.0",
-      "port": 8080,
-      "auth_token": "my-secret"
-    },
-    "whatsapp_cloud": {
-      "enabled": false,
-      "phone_number_id": "...",
-      "access_token": "..."
-    },
-    "lark": {
-      "enabled": false,
-      "app_id": "...",
-      "app_secret": "..."
+      "crash_threshold": 4,
+      "window_secs": 300
     }
   },
-  "agents": {
-    "defaults": {
-      "agent_timeout_secs": 300,
-      "message_queue_mode": "collect",
-      "token_budget": 0,
-      "streaming": false
+  "tools": {
+    "web": {
+      "search": {
+        "api_key": null,
+        "max_results": 5
+      }
+    },
+    "whatsapp": {
+      "business_account_id": null,
+      "phone_number_id": null,
+      "access_token": null,
+      "webhook_verify_token": null,
+      "default_language": "ms"
+    },
+    "google_sheets": {
+      "access_token": null,
+      "service_account_base64": null
+    },
+    "google": {
+      "access_token": null,
+      "client_id": null,
+      "client_secret": null,
+      "default_calendar": "primary",
+      "max_search_results": 20
+    },
+    "http_request": null,
+    "transcribe": {
+      "enabled": false,
+      "groq_api_key": null,
+      "model": ""
+    },
+    "skills": {
+      "enabled": false,
+      "clawhub": {
+        "enabled": true,
+        "base_url": "https://clawhub.ai",
+        "auth_token": null
+      },
+      "search_cache": {
+        "max_size": 50,
+        "ttl_seconds": 300
+      }
+    },
+    "deny": []
+  },
+  "memory": {
+    "backend": "builtin",
+    "citations": "auto",
+    "include_default_memory": true,
+    "max_results": 6,
+    "min_score": 0.2,
+    "max_snippet_chars": 700,
+    "extra_paths": [],
+    "embedding_provider": null,
+    "embedding_model": null,
+    "hnsw_index_path": null,
+    "tantivy_index_path": null,
+    "hygiene": {
+      "enabled": true,
+      "interval_hours": 12,
+      "expired_threshold": 0.1,
+      "max_entries": 1000,
+      "conversation_keep": 50
     }
+  },
+  "heartbeat": {
+    "enabled": true,
+    "interval_secs": 1800,
+    "file_path": null,
+    "deliver_to": null
+  },
+  "skills": {
+    "enabled": true,
+    "workspace_dir": null,
+    "always_load": [],
+    "disabled": []
+  },
+  "runtime": {
+    "runtime_type": "native",
+    "allow_fallback_to_native": false,
+    "mount_allowlist_path": "~/.zeptoclaw/mount-allowlist.json",
+    "docker": {
+      "image": "alpine:latest",
+      "extra_mounts": [],
+      "memory_limit": "512m",
+      "cpu_limit": "1.0",
+      "network": "none",
+      "pids_limit": 100,
+      "stop_timeout_secs": 300
+    },
+    "apple": {
+      "image": "",
+      "extra_mounts": [],
+      "allow_experimental": false
+    },
+    "landlock": {
+      "fs_read_dirs": [
+        "/usr",
+        "/lib",
+        "/lib64",
+        "/etc",
+        "/bin",
+        "/sbin",
+        "/tmp"
+      ],
+      "fs_write_dirs": [
+        "/tmp"
+      ],
+      "allow_read_workspace": true,
+      "allow_write_workspace": true
+    },
+    "firejail": {
+      "profile": null,
+      "extra_args": []
+    },
+    "bubblewrap": {
+      "ro_binds": [
+        "/usr",
+        "/lib",
+        "/lib64",
+        "/etc",
+        "/bin",
+        "/sbin"
+      ],
+      "dev_bind": true,
+      "proc_bind": true,
+      "extra_args": []
+    }
+  },
+  "container_agent": {
+    "backend": "auto",
+    "image": "zeptoclaw:latest",
+    "docker_binary": null,
+    "memory_limit": "1g",
+    "cpu_limit": "2.0",
+    "timeout_secs": 300,
+    "network": "none",
+    "extra_mounts": [],
+    "max_concurrent": 5
+  },
+  "swarm": {
+    "enabled": true,
+    "max_depth": 1,
+    "max_concurrent": 3,
+    "roles": {}
   },
   "approval": {
     "enabled": false,
-    "require_approval": ["shell", "write_file"],
-    "auto_approve": ["read_file", "memory"]
+    "policy": "always_allow",
+    "require_for": [],
+    "dangerous_tools": [
+      "shell",
+      "write_file",
+      "edit_file",
+      "google"
+    ],
+    "auto_approve_timeout_secs": 0
   },
   "plugins": {
-    "enabled": true,
-    "directories": ["~/.zeptoclaw/plugins"]
+    "enabled": false,
+    "plugin_dirs": [
+      "~/.zeptoclaw/plugins"
+    ],
+    "allowed_plugins": [],
+    "blocked_plugins": []
   },
   "telemetry": {
     "enabled": false,
-    "format": "prometheus"
+    "format": "prometheus",
+    "endpoint": "/metrics"
   },
   "cost": {
     "enabled": false,
-    "warn_threshold_usd": 1.0
+    "custom_pricing": {}
+  },
+  "batch": {
+    "concurrency": 1,
+    "output_format": "text",
+    "stop_on_error": false
   },
   "hooks": {
+    "enabled": false,
     "before_tool": [],
     "after_tool": [],
     "on_error": []
+  },
+  "safety": {
+    "enabled": true,
+    "injection_check_enabled": true,
+    "leak_detection_enabled": true,
+    "max_output_length": 100000
+  },
+  "compaction": {
+    "enabled": false,
+    "context_limit": 100000,
+    "threshold": 0.7,
+    "emergency_threshold": 0.9,
+    "critical_threshold": 0.95
+  },
+  "mcp": {
+    "servers": []
+  },
+  "routines": {
+    "enabled": false,
+    "cron_interval_secs": 60,
+    "max_concurrent": 3,
+    "jitter_ms": 0,
+    "on_miss": "skip"
+  },
+  "tunnel": {
+    "provider": null,
+    "cloudflare": null,
+    "ngrok": null,
+    "tailscale": null
+  },
+  "stripe": {
+    "secret_key": null,
+    "default_currency": "usd",
+    "webhook_secret": null
+  },
+  "cache": {
+    "enabled": false,
+    "ttl_secs": 3600,
+    "max_entries": 500
+  },
+  "agent_mode": {
+    "mode": "autonomous"
+  },
+  "pairing": {
+    "enabled": false,
+    "max_attempts": 5,
+    "lockout_secs": 300
+  },
+  "session": {
+    "auto_repair": true
+  },
+  "custom_tools": [],
+  "transcription": {
+    "enabled": true,
+    "model": "whisper-1"
+  },
+  "tool_profiles": {},
+  "project": {
+    "backend": "github",
+    "default_project": "",
+    "jira_url": "",
+    "jira_token": null,
+    "github_token": null,
+    "linear_api_key": null
+  },
+  "health": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 9090
+  },
+  "devices": {
+    "enabled": false,
+    "monitor_usb": false
+  },
+  "logging": {
+    "format": "component",
+    "file": null,
+    "level": "info"
+  },
+  "panel": {
+    "enabled": false,
+    "port": 9092,
+    "api_port": 9091,
+    "auth_mode": "token",
+    "bind": "127.0.0.1"
   }
 }
