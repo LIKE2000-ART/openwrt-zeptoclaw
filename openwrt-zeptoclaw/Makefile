@@ -15,16 +15,14 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=rust/host
 PKG_USE_MIPS16:=0
 
-# Only MIPS targets need the portable-atomic patch and unlocked Cargo resolution.
-ifneq ($(filter mips mipsel,$(ARCH)),)
-RUST_PKG_LOCKED:=0
+# Apply package patches on all architectures.
 define Build/Patch
 	$(call Build/Patch/Default)
 endef
-else
-define Build/Patch
-	:
-endef
+
+# MIPS targets need unlocked Cargo resolution for portable-atomic patching.
+ifneq ($(filter mips mipsel,$(ARCH)),)
+RUST_PKG_LOCKED:=0
 endif
 
 include $(INCLUDE_DIR)/package.mk
