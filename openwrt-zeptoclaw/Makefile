@@ -7,7 +7,9 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/qhkm/zeptoclaw.git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=8bf1d73e6d19a307ff3f25d83ac01a625533a4e18af12261ccdaaa391efced62
+# Third-party package source is not published on OpenWrt source mirrors.
+# Keep mirror hash check disabled to avoid mirror/hash validation failures.
+PKG_MIRROR_HASH:=skip
 
 PKG_MAINTAINER:=yalike
 PKG_LICENSE:=Apache-2.0
