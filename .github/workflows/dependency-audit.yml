@@ -45,7 +45,7 @@ jobs:
           echo "build_time=$(date -u +'%Y%m%d-%H%M%SUTC')" >> "$GITHUB_OUTPUT"
 
       - name: Build package for audit
-        uses: sbwml/openwrt-gh-action-sdk@main
+        uses: openwrt/gh-action-sdk@v10
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
