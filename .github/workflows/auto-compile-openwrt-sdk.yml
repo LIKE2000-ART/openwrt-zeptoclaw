@@ -61,26 +61,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use latest upstream main
+      - name: Use Makefile release tag
         shell: bash
         run: |
           set -euo pipefail
 
-          UPSTREAM_REPO="https://github.com/qhkm/zeptoclaw.git"
-          UPSTREAM_SHA="$(git ls-remote "$UPSTREAM_REPO" refs/heads/main | awk '{print $1}')"
-          if [ -z "$UPSTREAM_SHA" ]; then
-            echo "Failed to resolve upstream main HEAD"
+          PKG_VERSION="$(sed -n 's|^PKG_VERSION:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
+          PKG_SOURCE_VERSION="$(sed -n 's|^PKG_SOURCE_VERSION:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
+          PKG_MIRROR_HASH="$(sed -n 's|^PKG_MIRROR_HASH:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
+
+          if [ -z "$PKG_VERSION" ] || [ -z "$PKG_SOURCE_VERSION" ] || [ -z "$PKG_MIRROR_HASH" ]; then
+            echo "Makefile version fields are incomplete"
             exit 1
           fi
 
-          SHORT_SHA="${UPSTREAM_SHA:0:7}"
-          SNAPSHOT_VER="main-${SHORT_SHA}"
-
-          sed -i "s|^PKG_VERSION:=.*|PKG_VERSION:=${SNAPSHOT_VER}|" openwrt-zeptoclaw/Makefile
-          sed -i "s|^PKG_SOURCE_VERSION:=.*|PKG_SOURCE_VERSION:=${UPSTREAM_SHA}|" openwrt-zeptoclaw/Makefile
-          sed -i "s|^PKG_MIRROR_HASH:=.*|PKG_MIRROR_HASH:=skip|" openwrt-zeptoclaw/Makefile
-
-          echo "Building zeptoclaw main @ ${UPSTREAM_SHA}"
+          echo "Building zeptoclaw release tag v${PKG_VERSION}"
+          echo "PKG_SOURCE_VERSION=${PKG_SOURCE_VERSION}"
+          echo "PKG_MIRROR_HASH=${PKG_MIRROR_HASH}"
 
       - name: Build Packages
         uses: sbwml/openwrt-gh-action-sdk@main
