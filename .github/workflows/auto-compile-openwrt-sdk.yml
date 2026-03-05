@@ -84,9 +84,9 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
-          # Pin packages feed to a known-good rust baseline (1.89.0).
+          # Use local override feed for rust to avoid CI LLVM download 404.
           NO_DEFAULT_FEEDS: true
-          EXTRA_FEEDS: src-git|packages|https://github.com/openwrt/packages.git^98d7b31c8eab53b4e78530a2857add05e1e0b610
+          EXTRA_FEEDS: src-link|packages|/feed/openwrt-packages-min
           PACKAGES: openwrt-zeptoclaw
           V: s
           NO_REFRESH_CHECK: true
