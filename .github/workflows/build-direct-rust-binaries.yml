@@ -104,7 +104,7 @@ jobs:
           if [[ "${{ matrix.arch }}" == "riscv64_riscv64" ]]; then
             cargo zigbuild --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
           elif [[ "${{ matrix.arch }}" == mips* ]]; then
-            cross +nightly build --release --target "${{ matrix.rust_target }}" -Z build-std=core,alloc,std,proc_macro --bin zeptoclaw
+            cross +nightly build --release --target "${{ matrix.rust_target }}" -Z build-std=core,alloc,std,proc_macro,panic_abort --bin zeptoclaw
           else
             cross build --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
           fi
