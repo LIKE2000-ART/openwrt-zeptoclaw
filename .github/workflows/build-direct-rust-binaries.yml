@@ -64,6 +64,20 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install nightly toolchain for mips build-std
+        if: startsWith(matrix.arch, 'mips')
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install nightly --profile minimal --component rust-src
+
+      - name: Install riscv64 rust target
+        if: matrix.arch == 'riscv64_riscv64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup target add riscv64gc-unknown-linux-musl
+
       - name: Install cross
         shell: bash
         run: |
@@ -75,7 +89,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cross build --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
+          if [[ "${{ matrix.arch }}" == mips* ]]; then
+            cross +nightly build --release --target "${{ matrix.rust_target }}" -Z build-std=core,alloc,std,proc_macro --bin zeptoclaw
+          else
+            cross build --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
+          fi
 
       - name: Pack artifact
         shell: bash
