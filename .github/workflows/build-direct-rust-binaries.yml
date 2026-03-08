@@ -78,7 +78,19 @@ jobs:
           set -euo pipefail
           rustup target add riscv64gc-unknown-linux-musl
 
+      - name: Install Zig for riscv64
+        if: matrix.arch == 'riscv64_riscv64'
+        uses: mlugg/setup-zig@v2
+
+      - name: Install cargo-zigbuild for riscv64
+        if: matrix.arch == 'riscv64_riscv64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install cargo-zigbuild --locked
+
       - name: Install cross
+        if: matrix.arch != 'riscv64_riscv64'
         shell: bash
         run: |
           set -euo pipefail
@@ -89,7 +101,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "${{ matrix.arch }}" == mips* ]]; then
+          if [[ "${{ matrix.arch }}" == "riscv64_riscv64" ]]; then
+            cargo zigbuild --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
+          elif [[ "${{ matrix.arch }}" == mips* ]]; then
             cross +nightly build --release --target "${{ matrix.rust_target }}" -Z build-std=core,alloc,std,proc_macro --bin zeptoclaw
           else
             cross build --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
