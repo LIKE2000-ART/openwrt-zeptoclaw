@@ -80,7 +80,7 @@ jobs:
           echo "PKG_MIRROR_HASH=${PKG_MIRROR_HASH}"
 
       - name: Build Packages
-        uses: openwrt/openwrt-gh-action-sdk@v10
+        uses: openwrt/gh-action-sdk@v10
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
