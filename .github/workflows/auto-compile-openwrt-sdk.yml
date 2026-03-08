@@ -84,9 +84,6 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.sdk }}
           FEEDNAME: packages_ci
-          # Use local override feed for rust to avoid CI LLVM download 404.
-          NO_DEFAULT_FEEDS: true
-          EXTRA_FEEDS: src-link|packages|/feed/openwrt-packages-min
           PACKAGES: openwrt-zeptoclaw
           V: s
           NO_REFRESH_CHECK: true
