@@ -1,0 +1,73 @@
+name: Build Direct Rust Binaries
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+
+    steps:
+      - name: Checkout package repo
+        uses: actions/checkout@v6
+
+      - name: Resolve upstream zeptoclaw tag
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          ver="$(sed -n 's|^PKG_VERSION:=||p' openwrt-zeptoclaw/Makefile | head -n1)"
+          if [ -z "$ver" ]; then
+            echo "Failed to parse PKG_VERSION from openwrt-zeptoclaw/Makefile"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Clone upstream source at tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "v${{ steps.ver.outputs.version }}" https://github.com/qhkm/zeptoclaw.git upstream-zeptoclaw
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install cross --locked
+
+      - name: Build binary with cross
+        working-directory: upstream-zeptoclaw
+        shell: bash
+        run: |
+          set -euo pipefail
+          cross build --release --target "${{ matrix.target }}" --bin zeptoclaw
+
+      - name: Pack artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp "upstream-zeptoclaw/target/${{ matrix.target }}/release/zeptoclaw" "out/zeptoclaw"
+          tar -zcf "zeptoclaw-v${{ steps.ver.outputs.version }}-${{ matrix.target }}.tar.gz" -C out zeptoclaw
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: zeptoclaw-v${{ steps.ver.outputs.version }}-${{ matrix.target }}
+          path: zeptoclaw-v${{ steps.ver.outputs.version }}-${{ matrix.target }}.tar.gz

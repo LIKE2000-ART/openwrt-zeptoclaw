@@ -79,6 +79,14 @@ jobs:
           echo "PKG_SOURCE_VERSION=${PKG_SOURCE_VERSION}"
           echo "PKG_MIRROR_HASH=${PKG_MIRROR_HASH}"
 
+      - name: Disable rust ci-llvm download (avoid 404)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Remote feeds/packages rust may default to download-ci-llvm=true,
+          # which intermittently fails when ci-artifacts are pruned.
+          sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' /feed/lang/rust/Makefile || true
+
       - name: Build Packages
         uses: openwrt/gh-action-sdk@v10
         env:
