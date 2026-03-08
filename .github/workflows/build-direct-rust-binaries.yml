@@ -74,17 +74,29 @@ jobs:
             bash -lc '
               set -euo pipefail
 
-              apt-get -qq update
-              apt-get -qq install -y curl ca-certificates build-essential pkg-config
-
               if ! command -v rustup >/dev/null 2>&1; then
-                curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+                if command -v curl >/dev/null 2>&1; then
+                  curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+                elif command -v wget >/dev/null 2>&1; then
+                  wget -qO- https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+                else
+                  echo "Neither curl nor wget is available to install rustup"
+                  exit 1
+                fi
               fi
               . "$HOME/.cargo/env"
 
-              LINKER="$(ls /builder/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc | head -n1)"
+              shopt -s nullglob
+              linkers=(
+                /builder/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc
+                /home/build/openwrt/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc
+              )
+              LINKER="${linkers[0]:-}"
               if [ -z "$LINKER" ]; then
                 echo "OpenWrt SDK linker not found"
+                echo "Checked:"
+                echo "  /builder/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc"
+                echo "  /home/build/openwrt/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc"
                 exit 1
               fi
               AR="${LINKER%-gcc}-ar"
