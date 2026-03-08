@@ -61,53 +61,45 @@ jobs:
           cd upstream-zeptoclaw
           patch -p1 < ../openwrt-zeptoclaw/patches/100-portable-atomic-u64-for-mips.patch
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install nightly toolchain for mips build-std
-        if: startsWith(matrix.arch, 'mips')
+      - name: Build binary with OpenWrt SDK linker
         shell: bash
         run: |
           set -euo pipefail
-          rustup toolchain install nightly --profile minimal --component rust-src
+          docker run --rm \
+            -v "$PWD/upstream-zeptoclaw:/work" \
+            -w /work \
+            -e ARCH="${{ matrix.arch }}" \
+            -e RUST_TARGET="${{ matrix.rust_target }}" \
+            "openwrt/sdk:${{ matrix.arch }}-openwrt-24.10" \
+            bash -lc '
+              set -euo pipefail
 
-      - name: Install riscv64 rust target
-        if: matrix.arch == 'riscv64_riscv64'
-        shell: bash
-        run: |
-          set -euo pipefail
-          rustup target add riscv64gc-unknown-linux-musl
+              apt-get -qq update
+              apt-get -qq install -y curl ca-certificates build-essential pkg-config
 
-      - name: Install Zig for riscv64
-        if: matrix.arch == 'riscv64_riscv64'
-        uses: mlugg/setup-zig@v2
+              if ! command -v rustup >/dev/null 2>&1; then
+                curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+              fi
+              . "$HOME/.cargo/env"
 
-      - name: Install cargo-zigbuild for riscv64
-        if: matrix.arch == 'riscv64_riscv64'
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo install cargo-zigbuild --locked
+              LINKER="$(ls /builder/staging_dir/toolchain-*/bin/*-openwrt-linux-*-gcc | head -n1)"
+              if [ -z "$LINKER" ]; then
+                echo "OpenWrt SDK linker not found"
+                exit 1
+              fi
+              AR="${LINKER%-gcc}-ar"
+              TARGET_KEY="$(echo "$RUST_TARGET" | tr "-" "_" | tr "[:lower:]" "[:upper:]")"
+              export "CARGO_TARGET_${TARGET_KEY}_LINKER=$LINKER"
+              export "CARGO_TARGET_${TARGET_KEY}_AR=$AR"
 
-      - name: Install cross
-        if: matrix.arch != 'riscv64_riscv64'
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo install cross --locked
-
-      - name: Build binary with cross
-        working-directory: upstream-zeptoclaw
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ matrix.arch }}" == "riscv64_riscv64" ]]; then
-            cargo zigbuild --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
-          elif [[ "${{ matrix.arch }}" == mips* ]]; then
-            cross +nightly build --release --target "${{ matrix.rust_target }}" -Z build-std=core,alloc,std,proc_macro,panic_abort --bin zeptoclaw
-          else
-            cross build --release --target "${{ matrix.rust_target }}" --bin zeptoclaw
-          fi
+              if [[ "$ARCH" == mips* ]]; then
+                rustup toolchain install nightly --profile minimal --component rust-src
+                cargo +nightly build --release --target "$RUST_TARGET" -Z build-std=core,alloc,std,proc_macro,panic_abort --bin zeptoclaw
+              else
+                rustup target add "$RUST_TARGET"
+                cargo build --release --target "$RUST_TARGET" --bin zeptoclaw
+              fi
+            '
 
       - name: Pack artifact
         shell: bash
