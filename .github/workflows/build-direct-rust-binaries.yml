@@ -40,10 +40,16 @@ jobs:
           set -euo pipefail
           git clone --depth 1 --branch "v${{ steps.ver.outputs.version }}" https://github.com/qhkm/zeptoclaw.git upstream-zeptoclaw
 
+      - name: Apply OpenWrt mips patch
+        if: startsWith(matrix.target, 'mips')
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd upstream-zeptoclaw
+          patch -p1 < ../openwrt-zeptoclaw/patches/100-portable-atomic-u64-for-mips.patch
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
 
       - name: Install cross
         shell: bash
