@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-zeptoclaw
-PKG_VERSION:=0.7.6
+PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -9,7 +9,7 @@ PKG_SOURCE_URL:=https://github.com/qhkm/zeptoclaw.git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 # Third-party package source is not published on OpenWrt source mirrors.
 # Keep mirror hash check disabled to avoid mirror/hash validation failures.
-PKG_MIRROR_HASH:=b63343482982116040757f7cff3b862468fcab3335c8f1a2ed0af5e753bc4c25
+PKG_MIRROR_HASH:=2a4add574aa9edfe7aed3b9356c8e29195823d8b190742847df9795ff7d9c58f
 
 PKG_MAINTAINER:=yalike
 PKG_LICENSE:=Apache-2.0
