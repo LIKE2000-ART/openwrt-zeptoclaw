@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout package repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Resolve upstream zeptoclaw tag
         id: ver
